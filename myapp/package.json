@@ -1,0 +1,36 @@
+{
+  "name": "myapp",
+  "version": "0.0.1",
+  "description": "mock node program using  path aliases",
+  "main": "index.js",
+  "scripts": {
+    "fresh": "npm run clean && npm run build && npm run start",
+    "build": "tsc -p ./tsconfig.json",
+    "start": "node ./dist/index.js",
+    "test": "node ./atar/test.js",
+    "watch": "tsup ./src/index.ts --watch --onSuccess \"node ./dist/index.js\"",
+    "clean": "rimraf ./dist"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/cuppachino/atarboy.git"
+  },
+  "keywords": [
+    "path",
+    "alias",
+    "rust",
+    "demo"
+  ],
+  "author": "cuppachino <cuppachino.dev@gmail.com>",
+  "license": "GPL-3.0",
+  "bugs": {
+    "url": "https://github.com/cuppachino/atarboy/issues"
+  },
+  "homepage": "https://github.com/cuppachino/atarboy#readme",
+  "devDependencies": {
+    "@types/node": "^18.14.6",
+    "rimraf": "^4.3.0",
+    "tsup": "^6.6.3",
+    "typescript": "^4.9.5"
+  }
+}
