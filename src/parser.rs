@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 use std::{collections::HashMap, fs::File, io::BufReader};
 
 #[derive(Serialize, Deserialize, Debug)]
-pub(crate) struct Tsconfig {
+pub struct Tsconfig {
     #[serde(rename = "compilerOptions")]
     compiler_options: CompilerOptions,
 }
@@ -12,8 +12,8 @@ pub(crate) struct Tsconfig {
 #[derive(Serialize, Deserialize, Debug)]
 pub(crate) struct CompilerOptions {
     #[serde(rename = "baseUrl")]
-    base_url: String, // Required*
-    paths: HashMap<String, Vec<String>>, // Required*
+    base_url: String,
+    paths: HashMap<String, Vec<String>>,
     #[serde(default)]
     include: Vec<String>,
     #[serde(default)]
