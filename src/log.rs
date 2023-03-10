@@ -42,6 +42,20 @@ mod internal {
     efarve!(error, "error".bright_red().bold().underline(), 0);
 }
 
+// * Debug messages
+pub mod debug {
+    use camino::Utf8PathBuf;
+    use owo_colors::{colors::Yellow, OwoColorize};
+
+    /// Log the quantity of tsconfig.jsons to be parsed
+    pub fn tsconfig_paths(paths: &[Utf8PathBuf], logger: &super::Logger) {
+        logger.debug(format!(
+            "Reading {} tsconfigurations...",
+            paths.len().fg::<Yellow>()
+        ));
+    }
+}
+
 // * Info messages
 pub mod info {
     use owo_colors::OwoColorize;
@@ -55,20 +69,6 @@ pub mod info {
         logger.info(format!(
             "Found {} tsconfigurations...",
             len.color(usize_success(len, _len))
-        ));
-    }
-}
-
-// * Debug messages
-pub mod debug {
-    use camino::Utf8PathBuf;
-    use owo_colors::{colors::Yellow, OwoColorize};
-
-    /// Log the quantity of tsconfig.jsons to be parsed
-    pub fn tsconfig_paths(paths: &[Utf8PathBuf], logger: &super::Logger) {
-        logger.debug(format!(
-            "Reading {} tsconfigurations...",
-            paths.len().fg::<Yellow>()
         ));
     }
 }
