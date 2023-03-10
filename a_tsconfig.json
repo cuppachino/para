@@ -5,7 +5,8 @@
     "paths": {
       "@/*": ["pkg/*"],
       "$/*": ["node_modules/*"]
-    }
+    },
+    "outDir": "dist"
   },
   "include": ["pkg"],
   "exclude": ["node_modules"]
