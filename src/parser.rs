@@ -9,6 +9,10 @@ use std::{collections::HashMap, fs::File, io::BufReader};
 pub struct Tsconfig {
     #[serde(rename = "compilerOptions")]
     compiler_options: CompilerOptions,
+    #[serde(default)]
+    include: Vec<String>,
+    #[serde(default)]
+    exclude: Vec<String>,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -16,19 +20,21 @@ pub(crate) struct CompilerOptions {
     #[serde(rename = "baseUrl")]
     base_url: String,
     paths: HashMap<String, Vec<String>>,
-    #[serde(default)]
-    include: Vec<String>,
-    #[serde(default)]
-    exclude: Vec<String>,
+    #[serde(rename = "outDir")]
+    out_dir: String,
 }
 
 pub(crate) fn parse_tsconfig<P: AsRef<std::path::Path>>(path: P) -> Result<Tsconfig> {
-    let file = File::open(path)?;
+    let file = File::open(&path)?;
     let reader = BufReader::new(file);
 
     let stripped = StripComments::new(reader);
 
-    let tsconfig: Tsconfig = serde_json::from_reader(stripped)?;
+    let tsconfig: Tsconfig =
+        serde_json::from_reader(stripped).map_err(|e: serde_json::Error| {
+            crate::log::error::missing_fields(&path, &e);
+            e
+        })?;
 
     Ok(tsconfig)
 }

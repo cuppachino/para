@@ -36,8 +36,8 @@ impl Logger {
     }
 }
 
-// ? Internal farve macros
-mod internal {
+/// Internal farve macros
+pub(crate) mod internal {
     use farve::{efarve, farve};
     use owo_colors::OwoColorize;
 
@@ -48,7 +48,7 @@ mod internal {
     efarve!(error, "error".bright_red().bold().underline(), 0);
 }
 
-// * Verbose messages
+/// * Verbose messages
 pub mod verbose {
     /// Write a parsed Tsconfig struct to stdout
     pub fn tsconfigs(configs: &Vec<crate::parser::Tsconfig>, logger: &super::Logger) {
@@ -58,7 +58,7 @@ pub mod verbose {
     }
 }
 
-// * Debug messages
+/// * Debug messages
 pub mod debug {
     use camino::Utf8PathBuf;
     use owo_colors::{colors::Yellow, OwoColorize};
@@ -72,7 +72,7 @@ pub mod debug {
     }
 }
 
-// * Info messages
+/// * Info messages
 pub mod info {
     use owo_colors::OwoColorize;
 
@@ -80,16 +80,16 @@ pub mod info {
     use crate::parser::Tsconfig;
 
     /// Log the quantity of successfully parsed tsconfigs
-    pub fn configs_loaded(_len: usize, configs: &[Tsconfig], logger: &super::Logger) {
+    pub fn configs_loaded(paths_len: usize, configs: &[Tsconfig], logger: &super::Logger) {
         let len = configs.len();
         logger.info(format!(
             "Found {} tsconfigurations...",
-            len.color(usize_success(len, _len))
+            len.color(usize_success(len, paths_len))
         ));
     }
 }
 
-// * Warning messages
+/// * Warning messages
 pub mod warn {
     use camino::Utf8PathBuf;
     use owo_colors::{colors::Cyan, OwoColorize};
@@ -108,5 +108,17 @@ pub mod warn {
         paths.par_iter().for_each(|path| {
             self::skip_config(path, logger);
         });
+    }
+}
+
+/// * Error messages
+/// do not require a logger instance because errors are always logged.
+pub mod error {
+    pub fn missing_fields<P: AsRef<std::path::Path>>(path: P, e: &serde_json::Error) {
+        super::internal::error(format!(
+            "Parsing error in {}: {}",
+            path.as_ref().display(),
+            e
+        ));
     }
 }
