@@ -19,9 +19,9 @@ pub struct Tsconfig {
 pub(crate) struct CompilerOptions {
     #[serde(rename = "baseUrl")]
     base_url: String,
-    paths: HashMap<String, Vec<String>>,
     #[serde(rename = "outDir")]
     out_dir: String,
+    paths: HashMap<String, Vec<String>>,
 }
 
 pub(crate) fn parse_tsconfig<P: AsRef<std::path::Path>>(path: P) -> Result<Tsconfig> {
