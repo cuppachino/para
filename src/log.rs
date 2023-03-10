@@ -49,10 +49,12 @@ pub mod info {
     use crate::format::usize_success;
     use crate::parser::Tsconfig;
 
+    /// Log the quantity of successfully parsed tsconfigs
     pub fn configs_loaded(_len: usize, configs: &[Tsconfig], logger: &super::Logger) {
+        let len = configs.len();
         logger.info(format!(
             "Found {} tsconfigurations...",
-            configs.len().color(usize_success(configs.len(), _len))
+            len.color(usize_success(len, _len))
         ));
     }
 }
@@ -60,12 +62,13 @@ pub mod info {
 // * Debug messages
 pub mod debug {
     use camino::Utf8PathBuf;
-    use owo_colors::OwoColorize;
+    use owo_colors::{colors::Yellow, OwoColorize};
 
+    /// Log the quantity of tsconfig.jsons to be parsed
     pub fn tsconfig_paths(paths: &[Utf8PathBuf], logger: &super::Logger) {
         logger.debug(format!(
             "Reading {} tsconfigurations...",
-            paths.len().yellow()
+            paths.len().fg::<Yellow>()
         ));
     }
 }
