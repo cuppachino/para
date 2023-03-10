@@ -1,7 +1,7 @@
 use anyhow::Result;
 use camino::Utf8PathBuf;
 use json_comments::StripComments;
-use rayon::prelude::*;
+use rayon::{iter::Either, prelude::*};
 use serde::{Deserialize, Serialize};
 use std::{collections::HashMap, fs::File, io::BufReader};
 
@@ -33,15 +33,11 @@ pub(crate) fn parse_tsconfig<P: AsRef<std::path::Path>>(path: P) -> Result<Tscon
     Ok(tsconfig)
 }
 
-pub(crate) fn load_configs(paths: &[Utf8PathBuf], logger: &crate::log::Logger) -> Vec<Tsconfig> {
+pub(crate) fn load_configs(paths: &[Utf8PathBuf]) -> (Vec<Tsconfig>, Vec<&Utf8PathBuf>) {
     paths
         .par_iter()
-        .filter_map(|path| match parse_tsconfig(path) {
-            Ok(config) => Some(config),
-            _ => {
-                crate::log::warn::skip_config(path, logger);
-                None
-            }
+        .partition_map(|path| match parse_tsconfig(path) {
+            Ok(config) => Either::Left(config),
+            _ => Either::Right(path),
         })
-        .collect()
 }

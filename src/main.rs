@@ -15,8 +15,9 @@ fn main() -> std::io::Result<()> {
     log::debug::tsconfig_paths(&paths, &logger);
 
     // # 2. Filter & Parse tsconfig.json(s) Vec<Tsconfig>
-    let configs = parser::load_configs(paths, &logger);
+    let (configs, skipped) = parser::load_configs(paths);
     log::info::configs_loaded(paths.len(), &configs, &logger);
+    log::warn::paths_skipped(skipped, &logger);
 
     Ok(())
 }

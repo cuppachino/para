@@ -76,9 +76,21 @@ pub mod debug {
 // * Warning messages
 pub mod warn {
     use camino::Utf8PathBuf;
-    use owo_colors::OwoColorize;
+    use owo_colors::{colors::Cyan, OwoColorize};
+    use rayon::prelude::*;
 
-    pub fn skip_config(path: &Utf8PathBuf, logger: &super::Logger) {
-        logger.warn(format!("Skipping bad path: {}", path.cyan().underline()));
+    /// Notify user when a single path is skipped
+    fn skip_config(path: &Utf8PathBuf, logger: &super::Logger) {
+        logger.warn(format!(
+            "Skipped bad path: {}",
+            path.fg::<Cyan>().underline()
+        ));
+    }
+
+    /// Notify user when multiple paths are skipped
+    pub fn paths_skipped(paths: Vec<&Utf8PathBuf>, logger: &super::Logger) {
+        paths.par_iter().for_each(|path| {
+            self::skip_config(path, logger);
+        });
     }
 }
