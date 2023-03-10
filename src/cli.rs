@@ -21,6 +21,8 @@ pub struct Pod {
 
 #[derive(Subcommand, ValueEnum, Clone)]
 pub enum Level {
+    /// Write (potentially sensitive) detailed process events to stdout
+    Verbose,
     /// Write unfiltered debug information to stdout
     Debug,
     ///  Write filesystem operations and useful process information to stdout

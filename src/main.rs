@@ -18,6 +18,7 @@ fn main() -> std::io::Result<()> {
     let (configs, skipped) = parser::load_configs(paths);
     log::info::configs_loaded(paths.len(), &configs, &logger);
     log::warn::paths_skipped(skipped, &logger);
+    log::verbose::tsconfigs(&configs, &logger);
 
     Ok(())
 }

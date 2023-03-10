@@ -7,9 +7,15 @@ impl Logger {
     pub fn init(level: Level) -> Self {
         Self { level }
     }
+    pub fn verbose<S: std::fmt::Display>(&self, msg: S) {
+        if let Level::Verbose = self.level {
+            internal::verbose(msg)
+        }
+    }
     pub fn debug<S: std::fmt::Display>(&self, msg: S) {
-        if let Level::Debug = self.level {
-            internal::debug(msg)
+        match self.level {
+            Level::Verbose | Level::Debug => internal::debug(msg),
+            _ => (),
         }
     }
     pub fn info<S: std::fmt::Display>(&self, msg: S) {
@@ -35,11 +41,21 @@ mod internal {
     use farve::{efarve, farve};
     use owo_colors::OwoColorize;
 
-    farve!(verbose, "verbose".blue().bold(), 1);
-    farve!(debug, "debug".green().italic(), 1);
-    farve!(info, "info".bright_cyan());
-    efarve!(warn, "warn".yellow().underline(), 0);
+    farve!(verbose, "verbose".bright_blue().bold(), 0);
+    farve!(debug, "debug".green().bold(), 1);
+    farve!(info, "info".bright_cyan(), 1);
+    efarve!(warn, "warn".yellow().bold(), 0);
     efarve!(error, "error".bright_red().bold().underline(), 0);
+}
+
+// * Verbose messages
+pub mod verbose {
+    /// Write a parsed Tsconfig struct to stdout
+    pub fn tsconfigs(configs: &Vec<crate::parser::Tsconfig>, logger: &super::Logger) {
+        configs.iter().for_each(|config| {
+            logger.verbose(format!("{:#?}", config));
+        });
+    }
 }
 
 // * Debug messages
