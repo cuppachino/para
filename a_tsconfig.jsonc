@@ -1,0 +1,22 @@
+{
+  /* Do not change this file; it's used in tests */
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@/*": [
+        "pkg/*"
+      ],
+      "$/*": [
+        "node_modules/*"
+      ]
+    },
+    "outDir": "dist"
+  },
+  "include": [
+    "pkg"
+  ],
+  "exclude": [
+    "node_modules"
+  ]
+}
