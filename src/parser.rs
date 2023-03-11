@@ -48,10 +48,21 @@ pub fn parse_tsconfig(path: impl AsRef<Path>) -> Result<ParaConfig> {
 }
 
 pub fn load_configs(paths: &[Utf8PathBuf]) -> (Vec<ParaConfig>, Vec<&Utf8PathBuf>) {
-    paths
-        .par_iter()
-        .partition_map(|path| match parse_tsconfig(path) {
+    let default_tsconfig_name: &str = "tsconfig.json";
+    paths.par_iter().partition_map(|path| {
+        match parse_tsconfig(normalize_dir_paths(path, default_tsconfig_name)) {
             Ok(config) => Either::Left(config),
             _ => Either::Right(path),
+        }
         })
+}
+
+/// This will append a file name to a path if the path is a directory.
+/// Otherwise, it will return the path as is.
+fn normalize_dir_paths(path: &Utf8PathBuf, file: impl AsRef<Utf8Path>) -> Utf8PathBuf {
+    let mut path = path.clone();
+    if path.is_dir() {
+        path.push(file);
+    }
+    path
 }
