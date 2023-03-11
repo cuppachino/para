@@ -84,8 +84,8 @@ mod tests {
     #[test]
     fn test_load_configs() {
         let cwd = Cwd::new();
-        let a = cwd.clone().join("a_tsconfig.json");
-        let b = cwd.clone().join("b_tsconfig.json"); // is missing "outDir"
+        let a = cwd.clone().join("a_tsconfig.jsonc");
+        let b = cwd.clone().join("b_tsconfig.jsonc"); // is missing "outDir"
         let c = cwd.clone().join("myapp/tsconfig.json");
 
         let binding = [a, b, c];
@@ -98,8 +98,8 @@ mod tests {
     #[test]
     fn test_parse_tsconfig() {
         let cwd = Cwd::new();
-        let a = cwd.clone().join("a_tsconfig.json");
-        let b = cwd.clone().join("b_tsconfig.json"); // is missing "outDir"
+        let a = cwd.clone().join("a_tsconfig.jsonc");
+        let b = cwd.clone().join("b_tsconfig.jsonc"); // is missing "outDir"
         let c = cwd.clone().join("myapp/tsconfig.json");
 
         let a_config = parse_tsconfig(&a).unwrap();
