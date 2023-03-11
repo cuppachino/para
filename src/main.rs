@@ -5,6 +5,7 @@ mod cli;
 mod format;
 mod log;
 mod parser;
+mod utils;
 
 fn main() -> std::io::Result<()> {
     let pod = cli::Pod::parse();
