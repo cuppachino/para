@@ -50,10 +50,16 @@ pub(crate) mod internal {
 
 /// * Verbose messages
 pub mod verbose {
+    use owo_colors::{colors::Cyan, OwoColorize};
+
     /// Write a parsed Tsconfig struct to stdout
-    pub fn tsconfigs(configs: &Vec<crate::parser::Tsconfig>, logger: &super::Logger) {
+    pub fn tsconfigs(configs: &Vec<crate::parser::ParaConfig>, logger: &super::Logger) {
         configs.iter().for_each(|config| {
-            logger.verbose(format!("{:#?}", config));
+            logger.verbose(format!(
+                "{}, {:#?}",
+                config.path.fg::<Cyan>().underline(),
+                config.tsconfig
+            ));
         });
     }
 }
@@ -77,11 +83,9 @@ pub mod info {
     use owo_colors::OwoColorize;
 
     use crate::format::usize_success;
-    use crate::parser::Tsconfig;
 
     /// Log the quantity of successfully parsed tsconfigs
-    pub fn configs_loaded(paths_len: usize, configs: &[Tsconfig], logger: &super::Logger) {
-        let len = configs.len();
+    pub fn configs_loaded(paths_len: usize, len: usize, logger: &super::Logger) {
         logger.info(format!(
             "Found {} tsconfigurations...",
             len.color(usize_success(len, paths_len))

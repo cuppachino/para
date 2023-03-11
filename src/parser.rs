@@ -3,43 +3,51 @@ use camino::Utf8PathBuf;
 use json_comments::StripComments;
 use rayon::{iter::Either, prelude::*};
 use serde::{Deserialize, Serialize};
-use std::{collections::HashMap, fs::File, io::BufReader};
+use std::{collections::HashMap, fs::File, path::Path};
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Default, Debug)]
+pub struct ParaConfig {
+    pub tsconfig: Tsconfig,
+    pub path: Utf8PathBuf,
+}
+
+#[derive(Serialize, Deserialize, Debug, Default)]
 pub struct Tsconfig {
     #[serde(rename = "compilerOptions")]
-    compiler_options: CompilerOptions,
+    pub compiler_options: CompilerOptions,
     #[serde(default)]
-    include: Vec<String>,
+    pub include: Vec<String>,
     #[serde(default)]
-    exclude: Vec<String>,
+    pub exclude: Vec<String>,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
-pub(crate) struct CompilerOptions {
+#[derive(Serialize, Deserialize, Debug, Default)]
+pub struct CompilerOptions {
     #[serde(rename = "baseUrl")]
-    base_url: String,
+    pub base_url: String,
     #[serde(rename = "outDir")]
-    out_dir: String,
-    paths: HashMap<String, Vec<String>>,
+    pub out_dir: String,
+    pub paths: HashMap<String, Vec<String>>,
 }
 
-pub(crate) fn parse_tsconfig<P: AsRef<std::path::Path>>(path: P) -> Result<Tsconfig> {
+pub fn parse_tsconfig(path: impl AsRef<Path>) -> Result<ParaConfig> {
     let file = File::open(&path)?;
-    let reader = BufReader::new(file);
+    let reader = std::io::BufReader::new(file);
 
-    let stripped = StripComments::new(reader);
-
-    let tsconfig: Tsconfig =
-        serde_json::from_reader(stripped).map_err(|e: serde_json::Error| {
+    let mut para_config = ParaConfig::default();
+    para_config.path = Utf8PathBuf::from_path_buf(path.as_ref().to_path_buf())
+        .ok()
+        .unwrap();
+    para_config.tsconfig =
+        serde_json::from_reader(StripComments::new(reader)).map_err(|e: serde_json::Error| {
             crate::log::error::missing_fields(&path, &e);
             e
         })?;
 
-    Ok(tsconfig)
+    Ok(para_config)
 }
 
-pub(crate) fn load_configs(paths: &[Utf8PathBuf]) -> (Vec<Tsconfig>, Vec<&Utf8PathBuf>) {
+pub fn load_configs(paths: &[Utf8PathBuf]) -> (Vec<ParaConfig>, Vec<&Utf8PathBuf>) {
     paths
         .par_iter()
         .partition_map(|path| match parse_tsconfig(path) {
