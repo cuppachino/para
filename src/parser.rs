@@ -27,6 +27,49 @@ pub struct Tsconfig {
 pub struct CompilerOptions {
     #[serde(rename = "baseUrl")]
     pub base_url: String,
+    /// Defines the structure of the dist directory.
+    ///
+    /// ### Project Structure
+    ///
+    /// ```
+    /// <proj>/src/foo/bar.ts
+    /// outDir: dist
+    ///
+    /// ```
+    ///
+    /// ### Example Unset
+    ///
+    /// Defaults to the longest common PathBuf of all input files.
+    ///
+    ///
+    /// ```
+    /// dist
+    /// └── bar.js
+    ///
+    /// /src/foo/bar.ts
+    ///      ^^^
+    /// /dist/bar.js
+    ///     ^
+    /// ```
+    ///
+    /// ### Example Set
+    ///
+    /// Here we set `rootDir` to `src` and `outDir` to `dist`.
+    ///
+    /// ```
+    /// /src/foo/bar.ts -> /dist/foo/bar.js
+    /// ```
+    ///
+    /// ```
+    /// dist
+    /// └── foo
+    ///     └── bar.js
+    /// ```
+    ///
+    #[serde(rename = "rootDir", default)]
+    pub root_dir: String,
+    #[serde(rename = "rootDirs", default)]
+    pub root_dirs: Vec<String>,
     #[serde(rename = "outDir")]
     pub out_dir: String,
     pub paths: HashMap<String, Vec<String>>,
@@ -142,6 +185,10 @@ mod tests {
         // Pre-mappings
         assert_eq!(config.tsconfig_path, cwd.join("myapp/tsconfig.json"));
         assert_eq!(config.tsconfig_parent, cwd.join("myapp"));
+        // - resolved_base_url
         assert_eq!(config.resolved_base_url, cwd.join("myapp/"));
+        // - resolved_root_dir // todo
+        // - resolved_out_dir // todo
+        // - thinking on root_dirs... // todo
     }
 }
