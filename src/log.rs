@@ -46,6 +46,7 @@ pub(crate) mod internal {
     farve!(info, "info".bright_cyan(), 1);
     efarve!(warn, "warn".yellow().bold(), 0);
     efarve!(error, "error".bright_red().bold().underline(), 0);
+    efarve!(os, format!("{}:os", "error".red().bold()), 0);
 }
 
 /// * Verbose messages
@@ -53,11 +54,11 @@ pub mod verbose {
     use owo_colors::{colors::Cyan, OwoColorize};
 
     /// Write a parsed Tsconfig struct to stdout
-    pub fn tsconfigs(configs: &Vec<crate::parser::ParaConfig>, logger: &super::Logger) {
+    pub fn tsconfigs(configs: &[crate::parser::ParaConfig], logger: &super::Logger) {
         configs.iter().for_each(|config| {
             logger.verbose(format!(
                 "{}, {:#?}",
-                config.path.fg::<Cyan>().underline(),
+                config.tsconfig_path.fg::<Cyan>().underline(),
                 config.tsconfig
             ));
         });
@@ -118,6 +119,15 @@ pub mod warn {
 /// * Error messages
 /// do not require a logger instance because errors are always logged.
 pub mod error {
+    use owo_colors::{colors::Cyan, OwoColorize};
+
+    pub fn os_error<P: AsRef<std::path::Path>>(path: P, e: &anyhow::Error) {
+        super::internal::os(format!(
+            "{} at {}",
+            e,
+            path.as_ref().to_string_lossy().fg::<Cyan>().underline()
+        ));
+    }
     pub fn missing_fields<P: AsRef<std::path::Path>>(path: P, e: &serde_json::Error) {
         super::internal::error(format!(
             "Parsing error in {}: {}",

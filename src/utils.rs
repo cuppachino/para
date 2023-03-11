@@ -4,12 +4,22 @@ use std::{
     path::Path,
 };
 
+/// This will append a file name to a path if the path is a directory.
+/// Otherwise, it will return the path as is.
+pub fn normalize_dir_paths(path: &Utf8PathBuf, file: impl AsRef<Utf8Path>) -> Utf8PathBuf {
+    let mut path = path.clone();
+    if path.is_dir() {
+        path.push(file);
+    }
+    path
+}
+
 pub struct Cwd(Utf8PathBuf);
 
 impl Cwd {
     #[allow(dead_code)]
     pub fn new() -> Self {
-        Self(Utf8PathBuf::from_path_buf(std::env::current_dir().unwrap().to_path_buf()).unwrap())
+        Self(Utf8PathBuf::from_path_buf(std::env::current_dir().unwrap()).unwrap())
     }
 }
 

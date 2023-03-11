@@ -13,7 +13,7 @@ fn main() -> std::io::Result<()> {
 
     // # 1. Extract paths from CLI
     let paths = pod.paths.as_parallel_slice();
-    log::debug::tsconfig_paths(&paths, &logger);
+    log::debug::tsconfig_paths(paths, &logger);
 
     // # 2. Filter & Parse tsconfig.json(s) Vec<Tsconfig>
     let (configs, skipped) = parser::load_configs(paths);

@@ -8,7 +8,9 @@ use std::{collections::HashMap, fs::File, path::Path};
 #[derive(Default, Debug)]
 pub struct ParaConfig {
     pub tsconfig: Tsconfig,
-    pub path: Utf8PathBuf,
+    pub tsconfig_path: Utf8PathBuf,
+    pub tsconfig_parent: Utf8PathBuf,
+    pub resolved_base_url: Utf8PathBuf,
 }
 
 #[derive(Serialize, Deserialize, Debug, Default)]
@@ -30,41 +32,50 @@ pub struct CompilerOptions {
     pub paths: HashMap<String, Vec<String>>,
 }
 
-pub fn parse_tsconfig(path: impl AsRef<Path>) -> Result<ParaConfig> {
-    let file = File::open(&path)?;
-    let reader = std::io::BufReader::new(file);
+pub fn parse_tsconfig<P>(path: P) -> Result<ParaConfig>
+where
+    P: AsRef<Path>,
+{
+    let tsconfig_path = Utf8Path::from_path(path.as_ref()).unwrap();
+    let file = File::open(tsconfig_path)?;
+    let tsconfig: Tsconfig = serde_json::from_reader(StripComments::new(std::io::BufReader::new(
+        file,
+    )))
+    .map_err(|e| {
+        crate::log::error::missing_fields(tsconfig_path, &e);
+        e
+    })?;
+    let tsconfig_parent = tsconfig_path.parent().unwrap();
+    let resolved_base_url = Utf8PathBuf::from_path_buf(clean_path::clean(
+        tsconfig_parent
+            .to_path_buf()
+            .join(&tsconfig.compiler_options.base_url),
+    ))
+    .unwrap();
 
-    let mut para_config = ParaConfig::default();
-    para_config.path = Utf8PathBuf::from_path_buf(path.as_ref().to_path_buf())
-        .ok()
-        .unwrap();
-    para_config.tsconfig =
-        serde_json::from_reader(StripComments::new(reader)).map_err(|e: serde_json::Error| {
-            crate::log::error::missing_fields(&path, &e);
-            e
-        })?;
+    // ? ---
+    let para_config = ParaConfig {
+        tsconfig,
+        tsconfig_path: tsconfig_path.into(),
+        tsconfig_parent: tsconfig_parent.into(),
+        resolved_base_url,
+    };
 
     Ok(para_config)
 }
 
 pub fn load_configs(paths: &[Utf8PathBuf]) -> (Vec<ParaConfig>, Vec<&Utf8PathBuf>) {
+    use crate::utils::normalize_dir_paths;
     let default_tsconfig_name: &str = "tsconfig.json";
     paths.par_iter().partition_map(|path| {
         match parse_tsconfig(normalize_dir_paths(path, default_tsconfig_name)) {
             Ok(config) => Either::Left(config),
-            _ => Either::Right(path),
+            Err(e) => {
+                crate::log::error::os_error(path, &e);
+                Either::Right(path)
+            }
         }
     })
-}
-
-/// This will append a file name to a path if the path is a directory.
-/// Otherwise, it will return the path as is.
-fn normalize_dir_paths(path: &Utf8PathBuf, file: impl AsRef<Utf8Path>) -> Utf8PathBuf {
-    let mut path = path.clone();
-    if path.is_dir() {
-        path.push(file);
-    }
-    path
 }
 
 #[cfg(test)]
@@ -73,53 +84,64 @@ mod tests {
     use crate::utils::Cwd;
 
     #[test]
-    fn test_normalize_dir_paths() {
+    fn default_to_tsconfig_dot_json() {
+        use crate::utils::normalize_dir_paths;
         let cwd = Cwd::new();
         let a = cwd.clone().join("tsconfig.json");
-
         assert_eq!(a, normalize_dir_paths(&cwd, "tsconfig.json"));
         assert_eq!(a, normalize_dir_paths(&a, cwd.join("tsconfig.json")));
+    }
+    #[test]
+    fn cannot_parse_without_args_or_default_tsconfig_path() {
+        let cwd = Cwd::new();
+        let config = parse_tsconfig(&cwd);
+        assert!(config.is_err());
+    }
+    #[test]
+    fn cannot_parse_invalid_tsconfig_paths() {
+        let cwd = Cwd::new();
+        let config = parse_tsconfig(&cwd.join("./tsconfig.json"));
+        assert!(config.is_err());
+    }
+    #[test]
+    fn cannot_parse_malformed_tsconfigs() {
+        let cwd = Cwd::new();
+        let b = cwd.clone().join("b_tsconfig.jsonc");
+        let b_config = parse_tsconfig(&b).ok();
+        assert!(b_config.is_none());
     }
 
     #[test]
     fn test_load_configs() {
         let cwd = Cwd::new();
-        let a = cwd.clone().join("a_tsconfig.jsonc");
-        let b = cwd.clone().join("b_tsconfig.jsonc"); // is missing "outDir"
-        let c = cwd.clone().join("myapp/tsconfig.json");
-
-        let binding = [a, b, c];
-        let (configs, errors) = load_configs(&binding);
+        let tsconfig_paths = &[
+            cwd.join("a_tsconfig.jsonc"),
+            cwd.join("b_tsconfig.jsonc"),
+            cwd.join("myapp/tsconfig.json"),
+        ];
+        let (configs, errors) = load_configs(tsconfig_paths);
         assert_eq!(configs.len(), 2);
         assert_eq!(errors.len(), 1);
-        assert_eq!(errors[0], &binding[1])
+        assert_eq!(errors[0], &tsconfig_paths[1])
     }
 
     #[test]
-    fn test_parse_tsconfig() {
+    fn should_parse_found_tsconfigs() {
         let cwd = Cwd::new();
-        let a = cwd.clone().join("a_tsconfig.jsonc");
-        let b = cwd.clone().join("b_tsconfig.jsonc"); // is missing "outDir"
-        let c = cwd.clone().join("myapp/tsconfig.json");
+        let config = parse_tsconfig(cwd.join("myapp/tsconfig.json")).unwrap();
 
-        let a_config = parse_tsconfig(&a).unwrap();
-        let b_config = parse_tsconfig(&b).ok();
-        let c_config = parse_tsconfig(&c).unwrap();
-
-        assert_eq!(a_config.path, a);
-        assert!(b_config.is_none());
-        assert_eq!(c_config.path, c);
-
-        assert_eq!(a_config.tsconfig.compiler_options.out_dir, "dist");
-        assert_eq!(a_config.tsconfig.compiler_options.base_url, ".");
-        assert_eq!(a_config.tsconfig.compiler_options.paths.len(), 2);
+        // Tsconfig deserialization
+        assert_eq!(config.tsconfig.compiler_options.base_url, "./");
+        assert_eq!(config.tsconfig.compiler_options.out_dir, "./dist");
+        assert_eq!(config.tsconfig.compiler_options.paths.len(), 2);
+        assert_eq!(config.tsconfig.compiler_options.paths["@/*"], vec!["pkg/*"]);
         assert_eq!(
-            a_config.tsconfig.compiler_options.paths["@/*"],
-            vec!["pkg/*"]
-        );
-        assert_eq!(
-            a_config.tsconfig.compiler_options.paths["$/*"],
+            config.tsconfig.compiler_options.paths["$/*"],
             vec!["node_modules/*"]
         );
+        // Pre-mappings
+        assert_eq!(config.tsconfig_path, cwd.join("myapp/tsconfig.json"));
+        assert_eq!(config.tsconfig_parent, cwd.join("myapp"));
+        assert_eq!(config.resolved_base_url, cwd.join("myapp/"));
     }
 }
