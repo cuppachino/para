@@ -1,26 +1,31 @@
 use anyhow::Result;
 use camino::{Utf8Path, Utf8PathBuf};
+use clean_path::clean;
 use json_comments::StripComments;
 use rayon::{iter::Either, prelude::*};
 use serde::{Deserialize, Serialize};
-use std::{collections::HashMap, fs::File, path::Path};
+use std::{
+    collections::HashMap,
+    fs::File,
+    path::{Path, PathBuf},
+};
 
 #[derive(Default, Debug)]
 pub struct ParaConfig {
     pub tsconfig: Tsconfig,
     pub tsconfig_path: Utf8PathBuf,
     pub tsconfig_parent: Utf8PathBuf,
-    pub resolved_base_url: Utf8PathBuf,
+
+    pub resolved_out_dir: PathBuf,
+    pub resolved_base_url: PathBuf,
 }
 
 #[derive(Serialize, Deserialize, Debug, Default)]
 pub struct Tsconfig {
     #[serde(rename = "compilerOptions")]
     pub compiler_options: CompilerOptions,
-    #[serde(default)]
-    pub include: Vec<String>,
-    #[serde(default)]
-    pub exclude: Vec<String>,
+    pub include: Option<Vec<String>>,
+    pub exclude: Option<Vec<String>>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Default)]
@@ -89,12 +94,10 @@ where
         e
     })?;
     let tsconfig_parent = tsconfig_path.parent().unwrap();
-    let resolved_base_url = Utf8PathBuf::from_path_buf(clean_path::clean(
-        tsconfig_parent
-            .to_path_buf()
-            .join(&tsconfig.compiler_options.base_url),
-    ))
-    .unwrap();
+    let (resolved_base_url, resolved_out_dir) = {
+        let r = clean(tsconfig_parent.join(&tsconfig.compiler_options.base_url));
+        (PathBuf::from(&r), PathBuf::from(&r))
+    };
 
     // ? ---
     let para_config = ParaConfig {
@@ -102,6 +105,7 @@ where
         tsconfig_path: tsconfig_path.into(),
         tsconfig_parent: tsconfig_parent.into(),
         resolved_base_url,
+        resolved_out_dir,
     };
 
     Ok(para_config)
@@ -182,7 +186,6 @@ mod tests {
             config.tsconfig.compiler_options.paths["$/*"],
             vec!["node_modules/*"]
         );
-        // Pre-mappings
         assert_eq!(config.tsconfig_path, cwd.join("myapp/tsconfig.json"));
         assert_eq!(config.tsconfig_parent, cwd.join("myapp"));
         // - resolved_base_url

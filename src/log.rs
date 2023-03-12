@@ -1,31 +1,27 @@
 use crate::cli::Level;
-pub struct Logger {
-    pub level: Level,
-}
+
+pub struct Logger(pub Level);
 
 impl Logger {
-    pub fn init(level: Level) -> Self {
-        Self { level }
-    }
     pub fn verbose<S: std::fmt::Display>(&self, msg: S) {
-        if let Level::Verbose = self.level {
+        if let Level::Verbose = self.0 {
             internal::verbose(msg)
         }
     }
     pub fn debug<S: std::fmt::Display>(&self, msg: S) {
-        match self.level {
+        match self.0 {
             Level::Verbose | Level::Debug => internal::debug(msg),
             _ => (),
         }
     }
     pub fn info<S: std::fmt::Display>(&self, msg: S) {
-        match self.level {
+        match self.0 {
             Level::Error | Level::Warn => (),
             _ => internal::info(msg),
         }
     }
     pub fn warn<S: std::fmt::Display>(&self, msg: S) {
-        match self.level {
+        match self.0 {
             Level::Error => (),
             _ => internal::warn(msg),
         }
@@ -67,6 +63,7 @@ pub mod verbose {
 
 /// * Debug messages
 pub mod debug {
+
     use camino::Utf8PathBuf;
     use owo_colors::{colors::Yellow, OwoColorize};
 

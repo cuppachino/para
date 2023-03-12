@@ -1,4 +1,6 @@
+use camino::Utf8PathBuf;
 use clap::Parser;
+use owo_colors::OwoColorize;
 use rayon::prelude::*;
 
 mod cli;
@@ -6,20 +8,37 @@ mod format;
 mod log;
 mod parser;
 mod utils;
+mod walker;
 
 fn main() -> std::io::Result<()> {
-    let pod = cli::Pod::parse();
-    let logger = log::Logger::init(pod.log_level);
+    // Parse CLI arguments
+    let cli = cli::Cli::parse();
+    let paths = cli
+        .paths_arg
+        .unwrap_or_default()
+        .into_par_iter()
+        .chain(
+            cli.paths
+                .unwrap_or(vec![Utf8PathBuf::from("./tsconfig.json")]),
+        )
+        .collect::<Vec<_>>();
 
-    // # 1. Extract paths from CLI
-    let paths = pod.paths.as_parallel_slice();
-    log::debug::tsconfig_paths(paths, &logger);
+    // Setup logger
+    use log::{debug, info, verbose, warn, Logger};
+    let logger = Logger(cli.log_level);
+    debug::tsconfig_paths(&paths, &logger);
 
-    // # 2. Filter & Parse tsconfig.json(s) Vec<Tsconfig>
-    let (configs, skipped) = parser::load_configs(paths);
-    log::verbose::tsconfigs(&configs, &logger);
-    log::warn::paths_skipped(skipped, &logger);
-    log::info::configs_loaded(paths.len(), configs.len(), &logger);
+    // Skip bad paths and parse valid configs.
+    let (configs, skipped) = parser::load_configs(&paths);
+    verbose::tsconfigs(&configs, &logger);
+    warn::paths_skipped(skipped, &logger);
+    info::configs_loaded(paths.len(), configs.len(), &logger);
+
+    // Exit if no configs were found
+    if configs.is_empty() {
+        return Ok(());
+    }
+
 
     Ok(())
 }
