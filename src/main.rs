@@ -4,6 +4,7 @@ use owo_colors::OwoColorize;
 use rayon::prelude::*;
 
 mod cli;
+mod exclusions;
 mod format;
 mod log;
 mod parser;
@@ -39,6 +40,8 @@ fn main() -> std::io::Result<()> {
         return Ok(());
     }
 
+    use exclusions::*;
+    let exclude_globset = cli.exclude.into_globset().unwrap();
 
     Ok(())
 }
