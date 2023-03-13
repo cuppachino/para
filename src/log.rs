@@ -114,7 +114,7 @@ pub mod warn {
 }
 
 /// * Error messages
-/// do not require a logger instance because errors are always logged.
+/// does not require a instance because errors are always logged.
 pub mod error {
     use owo_colors::{colors::Cyan, OwoColorize};
 

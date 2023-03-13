@@ -18,7 +18,6 @@ pub struct Cli {
     #[arg(
         short = 'p',
         long = "path",
-        // ^ but bright cyan char code is 0x1b[36m
         value_name = "\x1b[96mPATHS\x1b[0m",
         value_hint = clap::ValueHint::FilePath,
         use_value_delimiter = true,
