@@ -181,7 +181,10 @@ mod tests {
         assert_eq!(config.tsconfig.compiler_options.base_url, "./");
         assert_eq!(config.tsconfig.compiler_options.out_dir, "./dist");
         assert_eq!(config.tsconfig.compiler_options.paths.len(), 2);
-        assert_eq!(config.tsconfig.compiler_options.paths["@/*"], vec!["pkg/*"]);
+        assert_eq!(
+            config.tsconfig.compiler_options.paths["@/*"],
+            vec!["pkg/*", "pkg/other/*"]
+        );
         assert_eq!(
             config.tsconfig.compiler_options.paths["$/*"],
             vec!["node_modules/*"]
