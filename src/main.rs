@@ -40,7 +40,8 @@ fn main() -> std::io::Result<()> {
         return Ok(());
     }
 
-    use exclusions::*;
+    // Convert the CLI exclude args into a GlobSet
+    use exclusions::IntoGlobSet;
     let exclude_globset = cli.exclude.into_globset().unwrap();
 
     Ok(())

@@ -5,12 +5,12 @@ use globset::{Glob, GlobSet, GlobSetBuilder};
 ///
 /// This trait is implemented in `IntoGlobSet` and `IntoGlobs`.
 trait IntoGlobs {
-    fn into_globs(&self) -> Vec<Glob>;
+    fn into_globs(self) -> Vec<Glob>;
 }
 
 impl IntoGlobs for Vec<String> {
-    fn into_globs(&self) -> Vec<Glob> {
-        self.into_iter()
+    fn into_globs(self) -> Vec<Glob> {
+        self.iter()
             .map(|glob| {
                 Glob::new(&{
                     if !glob.starts_with("*/") {
@@ -27,12 +27,12 @@ impl IntoGlobs for Vec<String> {
 }
 
 pub trait IntoGlobSet {
-    fn into_globset(&self) -> Result<GlobSet, Error>;
+    fn into_globset(self) -> Result<GlobSet, Error>;
 }
 
 /// Transforms the exclude list into a globset.
 impl IntoGlobSet for Vec<String> {
-    fn into_globset(&self) -> Result<GlobSet, Error> {
+    fn into_globset(self) -> Result<GlobSet, Error> {
         let mut builder = GlobSetBuilder::new();
         for glob in self.into_globs() {
             builder.add(glob);

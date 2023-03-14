@@ -5,38 +5,72 @@ use clap::{command, Parser, ValueEnum};
 #[command(
     author,
     version,
-    about = "Another TypeScript alias resolver",
+    about = "My cli tool",
     long_about = r#"
 █▀█ ▄▀█ █▀█ ▄▀█
-█▀▀ █▀█ █▀▄ █▀█"#
+█▀▀ █▀█ █▀▄ █▀█
+
+Another TypeScript alias resolver
+"#
 )]
 pub struct Cli {
     /// A list of tsconfig.jsons with paths to resolve
-    #[clap(use_value_delimiter = true, value_name = "\x1b[96mPATHS\x1b[0m", value_hint = clap::ValueHint::FilePath)]
+    #[clap(
+        display_order = 0,
+        use_value_delimiter = true,
+        value_name = "\x1b[96mPATHS\x1b[0m",
+        value_hint = clap::ValueHint::FilePath
+    )]
     pub paths: Option<Vec<Utf8PathBuf>>,
+
     /// [default: "tsconfig.json"]
     #[arg(
+        display_order = 1,
         short = 'p',
         long = "path",
         value_name = "\x1b[96mPATHS\x1b[0m",
         value_hint = clap::ValueHint::FilePath,
-        use_value_delimiter = true,
+        use_value_delimiter = true
     )]
     pub paths_arg: Option<Vec<Utf8PathBuf>>,
 
     /// Exclude directories from the search
     #[arg(
+        display_order = 2,
         short = 'e',
         long = "exclude",
         value_name = "\x1b[91mDIRS\x1b[0m",
         value_hint = clap::ValueHint::DirPath,
         use_value_delimiter = true,
-        default_value = "node_modules,target,.git,.vscode,package.json,pnpm-lock.yaml,cargo.toml,cargo.lock"
+        default_values_t = [
+            "node_modules".to_string(),
+            ".git".to_string(),
+            ".gitignore".to_string(),
+            "*.ts".to_string(),
+            "*.tsx".to_string(),
+            "*.cts".to_string(),
+            "*.mts".to_string(),
+            "*.json".to_string(),
+            "*.lock".to_string(),
+            "*.toml".to_string(),
+            "*.yaml".to_string(),
+            "*.vscode".to_string(),
+            "target".to_string(),
+        ]
     )]
-    pub exclude: Vec<Utf8PathBuf>,
+    pub exclude: Vec<String>,
+
+    // todo!
+    /// [SWITCH] Extend the default exclude list instead of replacing it.
+    ///
+    /// [default: None]
+    #[arg(display_order = 3, action, short = 'E', long = "extend")]
+    pub exclude_default: bool,
 
     /// Set the logging level
     #[arg(
+        display_order = 4,
+        help_heading = "Verbosity",
         short,
         long = "log",
         value_name = "\x1b[90mLEVEL\x1b[0m",

@@ -4,11 +4,7 @@ use clean_path::clean;
 use json_comments::StripComments;
 use rayon::{iter::Either, prelude::*};
 use serde::{Deserialize, Serialize};
-use std::{
-    collections::HashMap,
-    fs::File,
-    path::{Path, PathBuf},
-};
+use std::{collections::HashMap, fs::File, path::Path};
 
 #[derive(Default, Debug)]
 pub struct ParaConfig {
@@ -16,8 +12,9 @@ pub struct ParaConfig {
     pub tsconfig_path: Utf8PathBuf,
     pub tsconfig_parent: Utf8PathBuf,
 
-    pub resolved_out_dir: PathBuf,
-    pub resolved_base_url: PathBuf,
+    pub resolved_out_dir: Utf8PathBuf,
+    pub resolved_base_url: Utf8PathBuf,
+    pub path_map: HashMap<String, Vec<Utf8PathBuf>>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Default)]
@@ -96,23 +93,58 @@ where
     let tsconfig_parent = tsconfig_path.parent().unwrap();
     let (resolved_base_url, resolved_out_dir) = {
         let r = clean(tsconfig_parent.join(&tsconfig.compiler_options.base_url));
-        (PathBuf::from(&r), PathBuf::from(&r))
+        (
+            Utf8PathBuf::from_path_buf(r.clone()).unwrap(),
+            Utf8PathBuf::from_path_buf(r).unwrap(),
+        )
     };
 
     // ? ---
-    let para_config = ParaConfig {
+    let mut para_config = ParaConfig {
         tsconfig,
         tsconfig_path: tsconfig_path.into(),
         tsconfig_parent: tsconfig_parent.into(),
         resolved_base_url,
         resolved_out_dir,
+        path_map: HashMap::new(),
     };
+
+    let alias_map = create_alias_path_map(&para_config.tsconfig, &para_config.tsconfig_parent);
+    para_config.path_map = alias_map;
 
     Ok(para_config)
 }
 
+pub fn create_alias_path_map(
+    tsconfig: &Tsconfig,
+    tsconfig_parent: &Utf8Path,
+) -> HashMap<String, Vec<Utf8PathBuf>> {
+    let mut alias_map: HashMap<String, Vec<Utf8PathBuf>> = HashMap::new();
+    for (alias, paths) in &tsconfig.compiler_options.paths {
+        let alias = alias.trim_end_matches("/*");
+        let paths = paths
+            .iter()
+            .map(|path| {
+                let path = path.trim_end_matches("/*");
+                let path = clean(tsconfig_parent.join(path));
+                Utf8PathBuf::from_path_buf(path).unwrap()
+            })
+            .collect::<Vec<_>>();
+        alias_map.insert(alias.to_owned(), paths);
+    }
+    alias_map
+}
+
+/// This will append a file name to a path if the path is a directory, otherwise returns the path.
+pub fn normalize_dir_paths(path: &Utf8PathBuf, file: impl AsRef<Utf8Path>) -> Utf8PathBuf {
+    let mut path = path.clone();
+    if path.is_dir() {
+        path.push(file);
+    }
+    path
+}
+
 pub fn load_configs(paths: &[Utf8PathBuf]) -> (Vec<ParaConfig>, Vec<&Utf8PathBuf>) {
-    use crate::utils::normalize_dir_paths;
     let default_tsconfig_name: &str = "tsconfig.json";
     paths.par_iter().partition_map(|path| {
         match parse_tsconfig(normalize_dir_paths(path, default_tsconfig_name)) {
@@ -132,7 +164,6 @@ mod tests {
 
     #[test]
     fn default_to_tsconfig_dot_json() {
-        use crate::utils::normalize_dir_paths;
         let cwd = Cwd::new();
         let a = cwd.clone().join("tsconfig.json");
         assert_eq!(a, normalize_dir_paths(&cwd, "tsconfig.json"));
