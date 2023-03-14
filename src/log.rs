@@ -1,6 +1,21 @@
+use std::path::PathBuf;
+
+use owo_colors::OwoColorize;
+
 use crate::cli::Level;
 
 pub struct Logger(pub Level);
+
+pub fn miss(path: &PathBuf, Logger(Level): &Logger) {
+    match Level {
+        Level::Error | Level::Warn => (),
+        _ => println!(
+            "cache {} {}",
+            "miss".bright_purple().bold(),
+            path.display().underline()
+        ),
+    }
+}
 
 impl Logger {
     pub fn verbose<S: std::fmt::Display>(&self, msg: S) {
@@ -38,7 +53,7 @@ pub(crate) mod internal {
     use owo_colors::OwoColorize;
 
     farve!(verbose, "verbose".bright_blue().bold(), 0);
-    farve!(debug, "debug".green().bold(), 1);
+    farve!(debug, "debug".on_black().white().bold(), 1);
     farve!(info, "info".bright_cyan(), 1);
     efarve!(warn, "warn".yellow().bold(), 0);
     efarve!(error, "error".bright_red().bold().underline(), 0);
@@ -47,6 +62,7 @@ pub(crate) mod internal {
 
 /// * Verbose messages
 pub mod verbose {
+    use crate::hash::FileHash;
     use owo_colors::{colors::Cyan, OwoColorize};
 
     /// Write a parsed Tsconfig struct to stdout
@@ -59,13 +75,27 @@ pub mod verbose {
             ));
         });
     }
+
+    /// Write out the hashed cwd
+    pub fn hashed_cwd(hash: &FileHash, logger: &super::Logger) {
+        logger.verbose(format!(
+            "{} {:x}",
+            "Cwd hash:".fg::<Cyan>().underline(),
+            hash
+        ));
+    }
 }
 
 /// * Debug messages
 pub mod debug {
 
+    use std::path::{Path, PathBuf};
+
     use camino::Utf8PathBuf;
-    use owo_colors::{colors::Yellow, OwoColorize};
+    use owo_colors::{
+        colors::{Blue, BrightBlack, Cyan, Yellow},
+        OwoColorize,
+    };
 
     /// Log the quantity of tsconfig.jsons to be parsed
     pub fn tsconfig_paths(paths: &[Utf8PathBuf], logger: &super::Logger) {
@@ -73,6 +103,34 @@ pub mod debug {
             "Reading {} tsconfigurations...",
             paths.len().fg::<Yellow>()
         ));
+    }
+
+    /// Write out the hashed cwd
+    pub fn cache_dir(hash: &PathBuf, logger: &super::Logger) {
+        logger.debug(format!(
+            "{} {:?}",
+            "Cwd hash:".fg::<Cyan>().underline(),
+            hash
+        ));
+    }
+
+    /// Log a path as skipped because it was in the exclude list
+    pub fn excluded_path(path: &Path, logger: &super::Logger) {
+        logger.debug(format!(
+            "{} {:?}",
+            "EXCLUDED".fg::<BrightBlack>().bold(),
+            path,
+        ));
+    }
+
+    /// Log a path as a file.
+    pub fn is_file(path: &Path, logger: &super::Logger) {
+        logger.debug(format!("{} {:?}", "IS FILE".fg::<Cyan>().bold(), path,));
+    }
+
+    /// Log a path as a directory.
+    pub fn is_dir(path: &Path, logger: &super::Logger) {
+        logger.debug(format!("{} {:?}", "IS DIR".fg::<Blue>().bold(), path,));
     }
 }
 
