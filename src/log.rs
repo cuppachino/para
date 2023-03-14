@@ -100,7 +100,7 @@ pub mod debug {
     /// Log the quantity of tsconfig.jsons to be parsed
     pub fn tsconfig_paths(paths: &[Utf8PathBuf], logger: &super::Logger) {
         logger.debug(format!(
-            "Reading {} tsconfigurations...",
+            "Reading {} tsconfigs...",
             paths.len().fg::<Yellow>()
         ));
     }
@@ -143,7 +143,7 @@ pub mod info {
     /// Log the quantity of successfully parsed tsconfigs
     pub fn configs_loaded(paths_len: usize, len: usize, logger: &super::Logger) {
         logger.info(format!(
-            "Found {} tsconfigurations...",
+            "Found {} tsconfigs...",
             len.color(usize_success(len, paths_len))
         ));
     }
