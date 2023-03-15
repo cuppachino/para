@@ -3,7 +3,7 @@ use globset::{Glob, GlobSet, GlobSetBuilder};
 
 /// This transforms a list of exclusions from the CLI into a list of globs.
 ///
-/// This trait is implemented in `IntoGlobSet` and `IntoGlobs`.
+/// This trait is implemented in `IntoGlobSet`
 trait IntoGlobs {
     fn into_globs(self) -> Vec<Glob>;
 }
