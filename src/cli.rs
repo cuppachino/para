@@ -31,7 +31,7 @@ pub struct Cli {
     )]
     pub paths_arg: Option<Vec<Utf8PathBuf>>,
 
-    /// Exclude directories from the search
+    /// Comma-separated patterns to exclude from resolution
     #[arg(
         short = 'e',
         long = "exclude",
@@ -55,7 +55,7 @@ pub struct Cli {
     )]
     pub exclude: Vec<String>,
 
-    /// [SWITCH] Extend the default exclude list instead of replacing it.
+    /// [SWITCH] Extend the default exclude list instead of replacing it (requires --exclude)
     #[arg(short = 'E', long = "extend", requires = "exclude", action)]
     pub merge_with_default_exclude: bool,
 
