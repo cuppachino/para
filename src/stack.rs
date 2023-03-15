@@ -3,6 +3,7 @@ use std::path::PathBuf;
 use globset::GlobSet;
 
 #[derive(Debug)]
+#[allow(dead_code)]
 pub enum Action {
     ReadFile(PathBuf),
     ReadDir(PathBuf),
@@ -29,23 +30,17 @@ impl RevealPath for Action {
     }
 }
 
-pub trait CanExcludeSelf {
-    fn is_blacklisted(&self, globset: &GlobSet) -> bool;
+pub trait CanMatchGlobset {
+    fn is_match(&self, globset: &GlobSet) -> Option<&PathBuf>;
 }
 
-impl CanExcludeSelf for Action {
-    fn is_blacklisted(&self, globset: &GlobSet) -> bool {
-        let path = match self {
-            Action::ReadFile(path) => Some(path),
-            Action::ReadDir(path) => Some(path),
-            Action::CacheFile(_) => None,
-            Action::CompareHash(path, _, _) => Some(path),
-            Action::FindCaptures(_, _) => None,
-            Action::FinishJob(path, _) => Some(path),
-        };
-        if path.is_none() {
-            return false;
+impl CanMatchGlobset for Action {
+    fn is_match(&self, globset: &GlobSet) -> Option<&PathBuf> {
+        if let Some(path) = self.reveal_path() {
+            if globset.is_match(path) {
+                return Some(path);
+            }
         }
-        globset.is_match(path.unwrap())
+        None
     }
 }

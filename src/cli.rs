@@ -1,5 +1,5 @@
 use camino::Utf8PathBuf;
-use clap::{command, Parser, ValueEnum};
+use clap::{command, Parser, Subcommand, ValueEnum};
 
 #[derive(Parser)]
 #[command(
@@ -11,23 +11,21 @@ use clap::{command, Parser, ValueEnum};
 █▀▀ █▀█ █▀▄ █▀█
 Another TypeScript alias resolver"#
 )]
+#[group(name = "para")]
 pub struct Cli {
     /// A list of tsconfig.jsons with paths to resolve
     #[clap(
-        display_order = 0,
         use_value_delimiter = true,
-        value_name = "\x1b[96mPATHS\x1b[0m",
+        value_name = "\u{1b}[96mPATHS\u{1b}[0m",
         value_hint = clap::ValueHint::FilePath
     )]
     pub paths: Option<Vec<Utf8PathBuf>>,
 
-    /// [default: "tsconfig.json"]
+    /// [default: tsconfig.json]
     #[arg(
-        display_order = 1,
-        help_heading = "Config",
         short = 'p',
-        long = "path",
-        value_name = "\x1b[96mPATHS\x1b[0m",
+        long = "project",
+        value_name = "\x08\u{1b}[0m<\u{1b}[96mPATHS\u{1b}[0m",
         value_hint = clap::ValueHint::FilePath,
         use_value_delimiter = true
     )]
@@ -35,14 +33,11 @@ pub struct Cli {
 
     /// Exclude directories from the search
     #[arg(
-        display_order = 2,
-        help_heading = "Config",
         short = 'e',
         long = "exclude",
-        value_name = "\x1b[91mDIRS\x1b[0m",
-        value_hint = clap::ValueHint::DirPath,
+        value_name = "\x08\u{1b}[0m<\u{1b}[91mDIRS\u{1b}[0m", // backspace is \x08
         use_value_delimiter = true,
-        default_values_t = [
+        default_values_t = vec![
             "node_modules".to_string(),
             ".git".to_string(),
             ".gitignore".to_string(),
@@ -60,48 +55,35 @@ pub struct Cli {
     )]
     pub exclude: Vec<String>,
 
-    // todo!
     /// [SWITCH] Extend the default exclude list instead of replacing it.
-    ///
-    /// [default: None]
-    #[arg(
-        display_order = 3,
-        help_heading = "Config",
-        short = 'E',
-        long = "extend",
-        action
-    )]
-    pub exclude_default: bool,
+    #[arg(short = 'E', long = "extend", requires = "exclude", action)]
+    pub merge_with_default_exclude: bool,
 
-    // ------------------------------
-    /// Set the logging level
-    #[arg(
-        display_order = 5,
-        help_heading = "Verbosity",
-        short,
-        long = "log",
-        value_name = "\x1b[90mLEVEL\x1b[0m",
-        value_enum,
-        default_value = "info"
-    )]
-    pub log_level: Level,
-
-    // ------------------------------
     /// Interact with the cache directory
-    // #[command(subcommand)]
     #[clap(
-        display_order = 5,
         help_heading = "Cache",
         short = 'c',
         long = "cache",
-        value_name = "\x1b[33mACTION\x1b[0m",
+        value_name = "\x08\u{1b}[0m<\u{1b}[32mACTION\u{1b}[0m",
         value_enum,
-        action
+        ignore_case = true
     )]
-    pub cache: Option<CacheCommand>,
+    pub cache_action: Option<CacheCommand>,
+
+    /// Set the logging level
+    #[arg(
+        help_heading = "Verbosity",
+        short,
+        long = "log",
+        value_name = "\x08\u{1b}[0m<\u{1b}[37mLEVEL\u{1b}[0m",
+        value_enum,
+        default_value = "info",
+        ignore_case = true
+    )]
+    pub log_level: Level,
 }
 
-#[derive(ValueEnum, Clone)]
+#[derive(ValueEnum, Copy, Clone, Eq, PartialEq, Ord, PartialOrd)]
 pub enum Level {
     /// Write absolutely everything to stdout
     Verbose,
@@ -115,14 +97,12 @@ pub enum Level {
     Error,
 }
 
-#[derive(ValueEnum, Clone)]
+#[derive(Subcommand, ValueEnum, Copy, Clone, Eq, PartialEq, Ord, PartialOrd)]
 pub enum CacheCommand {
     /// Clear the cache
     Clear,
-
-    /// Get para's cache directory for the current user.
-    Para,
-
-    /// Get the cache directory for the current project
-    Cwd,
+    /// Dump the cache to stdout
+    Dump,
+    /// Print the cache directory
+    Path,
 }

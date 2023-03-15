@@ -83,10 +83,12 @@ pub(crate) mod internal {
 
 /// * Verbose messages
 pub mod verbose {
-    use crate::hash::FileHash;
+    use std::{fmt::Debug, path::PathBuf};
+
+    use crate::utils::FileHash;
     use owo_colors::{colors::Cyan, OwoColorize};
 
-    /// Write a parsed Tsconfig struct to stdout
+    /// Write each parsed Tsconfig struct to stdout
     pub fn tsconfigs(configs: &[crate::parser::ParaConfig], logger: &super::Logger) {
         configs.iter().for_each(|config| {
             logger.verbose(format!(
@@ -104,6 +106,19 @@ pub mod verbose {
             hash.fg::<Cyan>().underline(),
         ));
     }
+
+    /// Write out the hashed cwd
+    pub fn cache_dir(hash: &PathBuf, logger: &super::Logger) {
+        logger.verbose(format!(
+            "cache directory {:?}",
+            hash.fg::<Cyan>().underline(),
+        ));
+    }
+
+    /// Dump the cache to stdout
+    pub fn dump_cache<H: Debug>(cache: H, logger: &super::Logger) {
+        logger.verbose(format!("cache dump: {:#?}", cache,));
+    }
 }
 
 /// * Debug messages
@@ -113,21 +128,13 @@ pub mod debug {
         colors::{Blue, BrightBlack, Cyan, Yellow},
         OwoColorize,
     };
-    use std::path::{Path, PathBuf};
+    use std::path::Path;
 
     /// Log the quantity of tsconfig.jsons to be parsed
     pub fn tsconfig_paths(paths: &[Utf8PathBuf], logger: &super::Logger) {
         logger.debug(format!(
             "Reading {} tsconfigs...",
             paths.len().fg::<Yellow>()
-        ));
-    }
-
-    /// Write out the hashed cwd
-    pub fn cache_dir(hash: &PathBuf, logger: &super::Logger) {
-        logger.debug(format!(
-            "cwd cache path {:?}",
-            hash.fg::<Cyan>().underline(),
         ));
     }
 
@@ -157,10 +164,10 @@ pub mod info {
     use owo_colors::OwoColorize;
 
     /// Log the quantity of successfully parsed tsconfigs
-    pub fn configs_loaded(paths_len: usize, len: usize, logger: &super::Logger) {
+    pub fn configs_loaded(target_quantity: usize, actual_quantity: usize, logger: &super::Logger) {
         logger.info(format!(
             "Found {} tsconfigs...",
-            len.color(usize_success(len, paths_len))
+            actual_quantity.color(usize_success(actual_quantity, target_quantity))
         ));
     }
 }
