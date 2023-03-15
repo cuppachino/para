@@ -5,13 +5,11 @@ use clap::{command, Parser, ValueEnum};
 #[command(
     author,
     version,
-    about = "My cli tool",
+    about = "Another TypeScript alias resolver",
     long_about = r#"
 █▀█ ▄▀█ █▀█ ▄▀█
 █▀▀ █▀█ █▀▄ █▀█
-
-Another TypeScript alias resolver
-"#
+Another TypeScript alias resolver"#
 )]
 pub struct Cli {
     /// A list of tsconfig.jsons with paths to resolve
@@ -26,6 +24,7 @@ pub struct Cli {
     /// [default: "tsconfig.json"]
     #[arg(
         display_order = 1,
+        help_heading = "Config",
         short = 'p',
         long = "path",
         value_name = "\x1b[96mPATHS\x1b[0m",
@@ -37,6 +36,7 @@ pub struct Cli {
     /// Exclude directories from the search
     #[arg(
         display_order = 2,
+        help_heading = "Config",
         short = 'e',
         long = "exclude",
         value_name = "\x1b[91mDIRS\x1b[0m",
@@ -64,12 +64,19 @@ pub struct Cli {
     /// [SWITCH] Extend the default exclude list instead of replacing it.
     ///
     /// [default: None]
-    #[arg(display_order = 3, action, short = 'E', long = "extend")]
+    #[arg(
+        display_order = 3,
+        help_heading = "Config",
+        short = 'E',
+        long = "extend",
+        action
+    )]
     pub exclude_default: bool,
 
+    // ------------------------------
     /// Set the logging level
     #[arg(
-        display_order = 4,
+        display_order = 5,
         help_heading = "Verbosity",
         short,
         long = "log",
@@ -78,6 +85,20 @@ pub struct Cli {
         default_value = "info"
     )]
     pub log_level: Level,
+
+    // ------------------------------
+    /// Interact with the cache directory
+    // #[command(subcommand)]
+    #[clap(
+        display_order = 5,
+        help_heading = "Cache",
+        short = 'c',
+        long = "cache",
+        value_name = "\x1b[33mACTION\x1b[0m",
+        value_enum,
+        action
+    )]
+    pub cache: Option<CacheCommand>,
 }
 
 #[derive(ValueEnum, Clone)]
@@ -92,4 +113,16 @@ pub enum Level {
     Warn,
     ///  Disable all output except error messages
     Error,
+}
+
+#[derive(ValueEnum, Clone)]
+pub enum CacheCommand {
+    /// Clear the cache
+    Clear,
+
+    /// Get para's cache directory for the current user.
+    Para,
+
+    /// Get the cache directory for the current project
+    Cwd,
 }

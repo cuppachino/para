@@ -1,19 +1,40 @@
 use std::path::PathBuf;
 
-use owo_colors::OwoColorize;
+use owo_colors::{AnsiColors, OwoColorize};
 
 use crate::cli::Level;
 
 pub struct Logger(pub Level);
 
-pub fn miss(path: &PathBuf, Logger(Level): &Logger) {
-    match Level {
+#[allow(dead_code)]
+pub fn miss(path: &PathBuf, Logger(level): &Logger) {
+    match level {
         Level::Error | Level::Warn => (),
         _ => println!(
             "cache {} {}",
-            "miss".bright_purple().bold(),
+            "miss".bright_purple().bold().italic(),
             path.display().underline()
         ),
+    }
+}
+
+#[allow(dead_code)]
+pub fn hit(path: &PathBuf, Logger(level): &Logger) {
+    match level {
+        Level::Error | Level::Warn => (),
+        _ => println!(
+            "cache {} {}",
+            "hit".bright_yellow().bold().italic(),
+            path.display().underline()
+        ),
+    }
+}
+
+pub fn usize_success(hits: usize, outof: usize) -> AnsiColors {
+    match hits {
+        q if q == outof => AnsiColors::Green,
+        0 => AnsiColors::Red,
+        _ => AnsiColors::Yellow,
     }
 }
 
@@ -52,9 +73,9 @@ pub(crate) mod internal {
     use farve::{efarve, farve};
     use owo_colors::OwoColorize;
 
-    farve!(verbose, "verbose".bright_blue().bold(), 0);
-    farve!(debug, "debug".on_black().white().bold(), 1);
-    farve!(info, "info".bright_cyan(), 1);
+    farve!(verbose, "verbose".magenta().bold(), 0);
+    farve!(debug, "debug".bright_blue().bold(), 1);
+    farve!(info, "info".bright_cyan().bold(), 1);
     efarve!(warn, "warn".yellow().bold(), 0);
     efarve!(error, "error".bright_red().bold().underline(), 0);
     efarve!(os, format!("{}:os", "error".red().bold()), 0);
@@ -79,23 +100,20 @@ pub mod verbose {
     /// Write out the hashed cwd
     pub fn hashed_cwd(hash: &FileHash, logger: &super::Logger) {
         logger.verbose(format!(
-            "{} {:x}",
-            "Cwd hash:".fg::<Cyan>().underline(),
-            hash
+            "hashed cwd path {:x}",
+            hash.fg::<Cyan>().underline(),
         ));
     }
 }
 
 /// * Debug messages
 pub mod debug {
-
-    use std::path::{Path, PathBuf};
-
     use camino::Utf8PathBuf;
     use owo_colors::{
         colors::{Blue, BrightBlack, Cyan, Yellow},
         OwoColorize,
     };
+    use std::path::{Path, PathBuf};
 
     /// Log the quantity of tsconfig.jsons to be parsed
     pub fn tsconfig_paths(paths: &[Utf8PathBuf], logger: &super::Logger) {
@@ -108,9 +126,8 @@ pub mod debug {
     /// Write out the hashed cwd
     pub fn cache_dir(hash: &PathBuf, logger: &super::Logger) {
         logger.debug(format!(
-            "{} {:?}",
-            "Cwd hash:".fg::<Cyan>().underline(),
-            hash
+            "cwd cache path {:?}",
+            hash.fg::<Cyan>().underline(),
         ));
     }
 
@@ -136,9 +153,8 @@ pub mod debug {
 
 /// * Info messages
 pub mod info {
+    use super::usize_success;
     use owo_colors::OwoColorize;
-
-    use crate::format::usize_success;
 
     /// Log the quantity of successfully parsed tsconfigs
     pub fn configs_loaded(paths_len: usize, len: usize, logger: &super::Logger) {
@@ -171,8 +187,7 @@ pub mod warn {
     }
 }
 
-/// * Error messages
-/// does not require a instance because errors are always logged.
+/// Error messages - these don't use the logger because we don't provide a way to silence them.
 pub mod error {
     use owo_colors::{colors::Cyan, OwoColorize};
 

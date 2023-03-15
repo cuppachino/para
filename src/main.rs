@@ -3,11 +3,10 @@ use clap::Parser;
 use lazy_static::lazy_static;
 use rayon::prelude::*;
 use regex::Regex;
-use std::collections::HashMap;
+use std::{collections::HashMap, path::PathBuf};
 
 mod cli;
 mod exclusions;
-mod format;
 mod hash;
 mod log;
 mod parser;
